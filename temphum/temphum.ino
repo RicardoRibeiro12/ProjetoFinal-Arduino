@@ -1,32 +1,38 @@
 #include <ESP8266WiFi.h>
 #include "DHT.h"
-#include <WiFiUdp.h>
-#include <coap-simple.h>
+
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
 
 #define DHTPIN 0
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* ssid = "Vodafone-C3F424";
-const char* password = "CZVTPG2zAQ";
-//------------------------
+// Set web server port number to 80
+//ESP8266WebServer server(80);
+WiFiServer server(80);
 
-//-------------------------
+// Variable to store the HTTP request
+String header;
+
+
 void setup() {
   Serial.begin(9600);
   //-----------------------
+  // WiFiManager
+  WiFiManager wifiManager;
+  //wifiManager.resetSettings();
+  // fetches ssid and pass from eeprom and tries to connect
+  //wifiManager.autoConnect("AP-NAME", "AP-PASSWORD");
+  wifiManager.autoConnect("AutoConnectAP");
 
-  //Conecta-se à rede WiFi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Conectando à rede WiFi...");
-  }
-  Serial.print("Endereço IP: ");
-  Serial.println(WiFi.localIP());
-
+  // if you get here you have connected to the WiFi
+  Serial.println("Connected.");
   //-----------------------
   dht.begin();
+  //-----------------------
+  server.begin();
 }
 
 void loop() {
@@ -38,11 +44,33 @@ void loop() {
   Serial.print(" °C - Umidade: ");
   Serial.print(humidity);
   Serial.println(" %");
-  //-----------------
-  int sensorValue = analogRead(A0);              // read the input on analog pin 0
-  float voltage = sensorValue * (5.0 / 1023.0);  // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V)
+
+  int sensorValue = analogRead(A0);
+
   Serial.print(" LDR ");
-  Serial.println(voltage);  // print out the value you read
-  //--------------
+  Serial.println(sensorValue);
+  
+  // Verifica se há clientes conectados
+  WiFiClient client = server.available();
+  if (client) {
+    // Lê a requisição HTTP
+    String request = client.readStringUntil('\r');
+    client.flush();
+
+    // Cria a resposta HTTP
+    String response = "HTTP/1.1 200 OK\r\n";
+    response += "Content-Type: text/html\r\n\r\n";
+    response += "<html><body>";
+    response += "Valor da Temperatura: " + String(temperature) + "<br>";
+    response += "Valor da Humidade: " + String(humidity) + "<br>";
+    response += "Valor da LDR: " + String(sensorValue) + "<br>";
+    response += "</body></html>";
+
+    // Envia a resposta HTTP para o cliente
+    client.print(response);
+    delay(1);
+    client.stop();
+  }
+
   delay(2000);
 }
