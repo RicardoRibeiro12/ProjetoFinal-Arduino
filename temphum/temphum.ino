@@ -10,6 +10,8 @@
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+int sensorPinLDR = A0; // define o pino do sensor como A0
+
 // Set web server port number to 80
 //ESP8266WebServer server(80);
 WiFiServer server(80);
@@ -45,14 +47,17 @@ void loop() {
   Serial.print(humidity);
   Serial.println(" %");
 
-  int sensorValue = analogRead(A0);
+  int sensorValue = analogRead(sensorPinLDR);
 
   Serial.print(" LDR ");
   Serial.println(sensorValue);
 
   // Verifica se há clientes conectados
   WiFiClient client = server.available();
+  IPAddress ip = WiFi.localIP();
+
   if (client) {
+
     // Lê a requisição HTTP
     String request = client.readStringUntil('\r');
     client.flush();
@@ -67,24 +72,42 @@ void loop() {
                   } \
                   window.onload = refresh(5000);\
                   </script>";
+    //-----------------------------
+    response += "<div class=\"row\">";
+    response += "<div class=\"col-sm-4\">";
+    response += "</div>";
+    response += "<div class=\"col-sm-4 text-center\">";
+    response += "<h5>Configuração ESP8266</h5>";
+    response += "<p class=\"text-center\">"+ ip.toString() +"</p>";
+    response += "</div>";
+    response += "<div class=\"col-sm-4\">";
+    response += "</div>";
+    response += "</div>";
+    //-----------------------------
     response += "<div class=\"row\">";
     response += "<div class=\"col-lg-3\">";
     response += "<div class=\"card mb-3\">";
     response += "<div class=\"card-body\">";
     response += "<h5 class=\"card-title\">Temperature</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(temperature) + "&deg;C</h6>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(temperature) + "&deg;C Pin: "+ DHTPIN +"</h6>";
     response += "</div></div></div>";
     response += "<div class=\"col-lg-3\">";
     response += "<div class=\"card mb-3\">";
     response += "<div class=\"card-body\">";
     response += "<h5 class=\"card-title\">Humidity</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(humidity) + "%</h6>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(humidity) + "% Pin: "+ DHTPIN +"</h6>";
     response += "</div></div></div>";
     response += "<div class=\"col-lg-3\">";
     response += "<div class=\"card mb-3\">";
     response += "<div class=\"card-body\">";
     response += "<h5 class=\"card-title\">LDR</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(sensorValue) + "</h6>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(sensorValue) + " Pin: "+ sensorPinLDR +"</h6>";
+    response += "</div></div></div>";
+    response += "<div class=\"col-lg-3\">";
+    response += "<div class=\"card mb-3\">";
+    response += "<div class=\"card-body\">";
+    response += "<h5 class=\"card-title\">Humidade do Solo</h5>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\"> Será Sensor de Solo</h6>";
     response += "</div></div></div></div>";
     response += "</body></html>";
 
