@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include "DHT.h"
+#include <String.h>
 
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
@@ -15,7 +16,6 @@ WiFiServer server(80);
 
 // Variable to store the HTTP request
 String header;
-
 
 void setup() {
   Serial.begin(9600);
@@ -49,21 +49,43 @@ void loop() {
 
   Serial.print(" LDR ");
   Serial.println(sensorValue);
-  
+
   // Verifica se há clientes conectados
   WiFiClient client = server.available();
   if (client) {
     // Lê a requisição HTTP
     String request = client.readStringUntil('\r');
     client.flush();
-
     // Cria a resposta HTTP
     String response = "HTTP/1.1 200 OK\r\n";
     response += "Content-Type: text/html\r\n\r\n";
-    response += "<html><body>";
-    response += "Valor da Temperatura: " + String(temperature) + "<br>";
-    response += "Valor da Humidade: " + String(humidity) + "<br>";
-    response += "Valor da LDR: " + String(sensorValue) + "<br>";
+    response += "<!DOCTYPE html><html lang='en'><head> <meta http-equiv='refresh' content='30'><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>ESP8266 Sensor Data</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
+    response += "<script>\
+                  function refresh(refreshPeriod) \
+                  {\
+                    setTimeout('location.reload(true)', refreshPeriod);\
+                  } \
+                  window.onload = refresh(5000);\
+                  </script>";
+    response += "<div class=\"row\">";
+    response += "<div class=\"col-lg-3\">";
+    response += "<div class=\"card mb-3\">";
+    response += "<div class=\"card-body\">";
+    response += "<h5 class=\"card-title\">Temperature</h5>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(temperature) + "&deg;C</h6>";
+    response += "</div></div></div>";
+    response += "<div class=\"col-lg-3\">";
+    response += "<div class=\"card mb-3\">";
+    response += "<div class=\"card-body\">";
+    response += "<h5 class=\"card-title\">Humidity</h5>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(humidity) + "%</h6>";
+    response += "</div></div></div>";
+    response += "<div class=\"col-lg-3\">";
+    response += "<div class=\"card mb-3\">";
+    response += "<div class=\"card-body\">";
+    response += "<h5 class=\"card-title\">LDR</h5>";
+    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(sensorValue) + "</h6>";
+    response += "</div></div></div></div>";
     response += "</body></html>";
 
     // Envia a resposta HTTP para o cliente
