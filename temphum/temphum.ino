@@ -11,12 +11,13 @@
 DHT dht(DHTPIN, DHTTYPE);
 // define o pino do sensor LDR como A0
 int sensorPinLDR = A0;
-// Define os pinos do relé
-const int relayPin1 = 13;
-const int relayPin2 = 15;
-// Define as variáveis para armazenar o estado do relé
-int relayState1 = LOW;
-int relayState2 = LOW;
+// Auxiliar variables to store the current output state
+String output5State = "off";
+String output4State = "off";
+
+// Assign output variables to GPIO pins
+const int output5 = 13;
+const int output4 = 15;
 // Set web server port number to 80
 //ESP8266WebServer server(80);
 WiFiServer server(80);
@@ -39,9 +40,12 @@ void setup() {
   //-----------------------
   dht.begin();
   //-----------------------
-  // Inicializa o pino do relé como saída
-  pinMode(relayPin1, OUTPUT);
-  pinMode(relayPin2, OUTPUT);
+  // Initialize the output variables as outputs
+  pinMode(output5, OUTPUT);
+  pinMode(output4, OUTPUT);
+  // Set outputs to LOW
+  digitalWrite(output5, LOW);
+  digitalWrite(output4, LOW);
   //-----------------------
   server.begin();
 }
@@ -60,81 +64,143 @@ void loop() {
   Serial.print(" LDR ");
   Serial.println(sensorValue);
   //-----------------------
-  // Alterna o estado do relé
-  relayState1 = !relayState1;
-  relayState2 = !relayState2;
-  // Atualiza o estado do relé nos pinos correspondentes
-  digitalWrite(relayPin1, relayState1);
-  digitalWrite(relayPin2, relayState2);
-  //print
-  Serial.print(" RELE 1 ");
-  Serial.println(relayState1);
-  Serial.print(" RELE 2 ");
-  Serial.println(relayState2);
+
   //-----------------------
   // Verifica se há clientes conectados
   WiFiClient client = server.available();
   IPAddress ip = WiFi.localIP();
 
-  if (client) {
+  if (client) {                     // If a new client connects,
+    Serial.println("New Client.");  // print a message out in the serial port
+    String currentLine = "";        // make a String to hold incoming data from the client
+    while (client.connected()) {    // loop while the client's connected
+      if (client.available()) {     // if there's bytes to read from the client,
+        char c = client.read();     // read a byte, then
+        Serial.write(c);            // print it out the serial monitor
+        header += c;
+        if (c == '\n') {  // if the byte is a newline character
+          // if the current line is blank, you got two newline characters in a row.
+          // that's the end of the client HTTP request, so send a response:
+          if (currentLine.length() == 0) {
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println("Connection: close");
+            client.println();
 
-    // Lê a requisição HTTP
-    String request = client.readStringUntil('\r');
-    client.flush();
-    // Cria a resposta HTTP
-    String response = "HTTP/1.1 200 OK\r\n";
-    response += "Content-Type: text/html\r\n\r\n";
-    response += "<!DOCTYPE html><html lang='en'><head> <meta http-equiv='refresh' content='2'><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>ESP8266 Sensor Data</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
-    response += "<script>\
-                  function refresh(refreshPeriod) \
-                  {\
-                    setTimeout('location.reload(true)', refreshPeriod);\
-                  } \
-                  window.onload = refresh(2000);\
-                  </script>";
-    //-----------------------------
-    response += "<div class=\"row\">";
-    response += "<div class=\"col-sm-4\">";
-    response += "</div>";
-    response += "<div class=\"col-sm-4 text-center\">";
-    response += "<h5>Configuração ESP8266</h5>";
-    response += "<p class=\"text-center\">" + ip.toString() + "</p>";
-    response += "</div>";
-    response += "<div class=\"col-sm-4\">";
-    response += "</div>";
-    response += "</div>";
-    //-----------------------------
-    response += "<div class=\"row\">";
-    response += "<div class=\"col-lg-3\">";
-    response += "<div class=\"card mb-3\">";
-    response += "<div class=\"card-body\">";
-    response += "<h5 class=\"card-title\">Temperature</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(temperature) + "&deg;C Pin: " + DHTPIN + "</h6>";
-    response += "</div></div></div>";
-    response += "<div class=\"col-lg-3\">";
-    response += "<div class=\"card mb-3\">";
-    response += "<div class=\"card-body\">";
-    response += "<h5 class=\"card-title\">Humidity</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(humidity) + "% Pin: " + DHTPIN + "</h6>";
-    response += "</div></div></div>";
-    response += "<div class=\"col-lg-3\">";
-    response += "<div class=\"card mb-3\">";
-    response += "<div class=\"card-body\">";
-    response += "<h5 class=\"card-title\">LDR</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(sensorValue) + " Pin: " + sensorPinLDR + "</h6>";
-    response += "</div></div></div>";
-    response += "<div class=\"col-lg-3\">";
-    response += "<div class=\"card mb-3\">";
-    response += "<div class=\"card-body\">";
-    response += "<h5 class=\"card-title\">RELE 1</h5>";
-    response += "<h6 class=\"card-subtitle mb-2 text-muted\">" + String(relayState1) +"</h6>";
-    response += "</div></div></div></div>";
-    response += "</body></html>";
-
-    // Envia a resposta HTTP para o cliente
-    client.print(response);
-    delay(1);
+            // turns the GPIOs on and off
+            if (header.indexOf("GET /5/on") >= 0) {
+              Serial.println("GPIO 5 on");
+              output5State = "on";
+              digitalWrite(output5, HIGH);
+            } else if (header.indexOf("GET /5/off") >= 0) {
+              Serial.println("GPIO 5 off");
+              output5State = "off";
+              digitalWrite(output5, LOW);
+            } else if (header.indexOf("GET /4/on") >= 0) {
+              Serial.println("GPIO 4 on");
+              output4State = "on";
+              digitalWrite(output4, HIGH);
+            } else if (header.indexOf("GET /4/off") >= 0) {
+              Serial.println("GPIO 4 off");
+              output4State = "off";
+              digitalWrite(output4, LOW);
+            }
+            // Display the HTML web page
+            client.println("<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>ESP8266 Sensor Data</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'>");
+            // CSS to style the on/off buttons
+            // Feel free to change the background-color and font-size attributes to fit your preferences
+            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+            client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;");
+            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+            client.println(".button2 {background-color: #77878A;}</style></head>");
+            /*client.println("<script>"); // <meta http-equiv='refresh' content='60'>
+            client.println("function refresh(refreshPeriod) {");
+            client.println("setTimeout('location.reload(true)', refreshPeriod);");
+            client.println("}");
+            client.println("window.onload = refresh(60000);");
+            client.println("</script>");*/
+            // Web Page Heading
+            client.println("<body>");
+            client.println("<div class=\"row\">");
+            client.println("<div class=\"col-sm-4\">");
+            client.println("</div>");
+            client.println("<div class=\"col-sm-4 text-center\">");
+            client.println("<h5>Configuração ESP8266</h5>");
+            client.println("<p class=\"text-center\">" + ip.toString() + "</p>");
+            client.println("</div>");
+            client.println("<div class=\"col-sm-4\">");
+            client.println("</div>");
+            client.println("</div>");
+            client.println("<div class=\"row\">");
+            client.println("<div class=\"col-lg-3\">");
+            client.println("<div class=\"card mb-3\">");
+            client.println("<div class=\"card-body\">");
+            client.println("<h5 class=\"card-title\">Temperature</h5>");
+            client.println("<h6 class=\"card-subtitle mb-2 text-muted\">" + String(temperature) + "&deg;C Pin: " + DHTPIN + "</h6>");
+            client.println("</div></div></div>");
+            client.println("<div class=\"col-lg-3\">");
+            client.println("<div class=\"card mb-3\">");
+            client.println("<div class=\"card-body\">");
+            client.println("<h5 class=\"card-title\">Humidity</h5>");
+            client.println("<h6 class=\"card-subtitle mb-2 text-muted\">" + String(humidity) + "% Pin: " + DHTPIN + "</h6>");
+            client.println("</div></div></div>");
+            client.println("<div class=\"col-lg-3\">");
+            client.println("<div class=\"card mb-3\">");
+            client.println("<div class=\"card-body\">");
+            client.println("<h5 class=\"card-title\">LDR</h5>");
+            client.println("<h6 class=\"card-subtitle mb-2 text-muted\">" + String(sensorValue) + " Pin: " + sensorPinLDR + "</h6>");
+            client.println("</div></div></div>");
+            client.println("<div class=\"col-lg-3\">");
+            client.println("<div class=\"card mb-3\">");
+            client.println("<div class=\"card-body\">");
+            client.println("<h5 class=\"card-title\">RELE 1</h5>");
+            //-----------------------
+            // Display current state, and ON/OFF buttons for GPIO 5
+            client.println("<p>GPIO 13 - State " + output5State + "</p>");
+            // If the output5State is off, it displays the ON button
+            if (output5State == "off") {
+              client.println("<p><a href=\"/5/on\"><button class=\"btn btn-success\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/5/off\"><button class=\"btn btn-danger\">OFF</button></a></p>");
+            }
+            //-----------------------
+            client.println("</div></div></div>");
+            client.println("<div class=\"col-lg-3\">");
+            client.println("<div class=\"card mb-3\">");
+            client.println("<div class=\"card-body\">");
+            client.println("<h5 class=\"card-title\">RELE 2</h5>");
+            //-----------------------
+            // Display current state, and ON/OFF buttons for GPIO 4
+            client.println("<p>GPIO 15 - State " + output4State + "</p>");
+            // If the output4State is off, it displays the ON button
+            if (output4State == "off") {
+              client.println("<p><a href=\"/4/on\"><button class=\"btn btn-success\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/4/off\"><button class=\"btn btn-danger\">OFF</button></a></p>");
+            }
+            //-----------------------
+            client.println("</div></div></div></div>");
+            client.println("</body></html>");
+            // The HTTP response ends with another blank line
+            client.println();
+            // Break out of the while loop
+            break;
+          } else {  // if you got a newline, then clear currentLine
+            currentLine = "";
+          }
+        } else if (c != '\r') {  // if you got anything else but a carriage return character,
+          currentLine += c;      // add it to the end of the currentLine
+        }
+      }
+    }
+    // Clear the header variable
+    header = "";
+    // Close the connection
     client.stop();
+    Serial.println("Client disconnected.");
+    Serial.println("");
   }
 
   delay(2000);
