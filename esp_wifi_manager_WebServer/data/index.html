@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+   <meta charset='UTF-8'>
+   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+   <title>ESP8266 Sensor Data</title>
+   <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'
+      integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'>
+</head>
+<script>
+   setInterval(function () {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+         if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("temperature").innerHTML = this.responseText;
+         }
+      };
+      xhttp.open("GET", "/temperature", true);
+      xhttp.send();
+   }, 2000);
+
+   setInterval(function () {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+         if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("humidity").innerHTML = this.responseText;
+         }
+      };
+      xhttp.open("GET", "/humidity", true);
+      xhttp.send();
+   }, 2000);
+
+   setInterval(function () {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+         if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("ldr").innerHTML = this.responseText;
+         }
+      };
+      xhttp.open("GET", "/ldr", true);
+      xhttp.send();
+   }, 2000);
+</script>
+
+<body>
+   <h2 class="text-center">ESP Web Server</h2>
+   <div class="row">
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">RELE 1-GPIO 13</h5>
+               <p>
+                  <a href="/13/on"><button class="button-on">ON</button></a>
+                  <a href="/13/off"><button class="button-off">OFF</button></a>
+               </p>
+               <p>State: %STATE13%</p>
+            </div>
+         </div>
+      </div>
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">RELE 2 -GPIO 15</h5>
+               <p>
+                  <a href="/15/on"><button class="button-on">ON</button></a>
+                  <a href="/15/off"><button class="button-off">OFF</button></a>
+               </p>
+               <p> State: %STATE15%</p>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div class="row">
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">Temperature</h5>
+               <h6 class="card-subtitle mb-2 text-muted">
+                  <span id="temperature">%TEMPERATURE%</span>
+                  <sup class="units">&deg;C</sup>
+               </h6>
+            </div>
+         </div>
+      </div>
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">Humidade</h5>
+               <h6 class="card-subtitle mb-2 text-muted">
+                  <span id="humidity">%HUMIDITY%</span>
+                  <sup class="units">&#37;</sup>
+               </h6>
+            </div>
+         </div>
+      </div>
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">LDR</h5>
+               <h6 class="card-subtitle mb-2 text-muted">
+                  <span id="ldr">%LDR%</span>
+                  <sup class="units">v</sup>
+               </h6>
+            </div>
+         </div>
+      </div>
+</body>
+</html>
