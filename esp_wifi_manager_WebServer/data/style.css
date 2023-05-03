@@ -1,3 +1,30 @@
+/* Estilos para telas grandes */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+/* Estilos para telas médias */
+@media (max-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+/* Estilos para telas pequenas */
+@media (max-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+
+/* Estilos para dispositivos móveis */
+@media (max-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+
 html {
   font-family: Arial, Helvetica, sans-serif; 
   display: inline-block; 
@@ -11,13 +38,23 @@ h1 {
 
 p { 
   font-size: 1.4rem;
+  text-align: center;
+  margin-left: 5%;
 }
 
 .topnav { 
   overflow: hidden; 
-  background-color: #0A1128;
+  background-color: #528364;
+  display: flex;
+  align-items: center;
+  justify-content: center; 
 }
-
+.topnav h1 {
+  text-align: center; /* Adiciona centralização horizontal */
+}
+.logo {
+  margin-right: 10px;
+}
 body {  
   margin: 0;
 }
@@ -42,13 +79,13 @@ body {
 .card-title { 
   font-size: 1.2rem;
   font-weight: bold;
-  color: #034078
+  color: #528364
 }
 
 input[type=submit] {
   border: none;
   color: #FEFCFB;
-  background-color: #034078;
+  background-color: #528364;
   padding: 15px 15px;
   text-align: center;
   text-decoration: none;
@@ -56,34 +93,40 @@ input[type=submit] {
   font-size: 16px;
   width: 100px;
   margin-right: 10px;
+  margin-bottom: 10px;
   border-radius: 4px;
   transition-duration: 0.4s;
   }
 
 input[type=submit]:hover {
-  background-color: #1282A2;
+  background-color: #A8C1B1;
+  
 }
 
-input[type=text], input[type=number], select {
-  width: 50%;
-  padding: 12px 20px;
-  margin: 18px;
+input[type=text], input[type=number], input[type=password], select {
+  width: 68%;
   display: inline-block;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
+  padding: 12px 20px;
+  margin-bottom: 18px;
 }
 
 label {
   font-size: 1.2rem; 
+  display: inline-block;
+  width: 30%;
+  text-align: center;
+  margin-right: 2%;
 }
 .value{
   font-size: 1.2rem;
-  color: #1282A2;  
+  color: #A8C1B1;  
 }
 .state {
   font-size: 1.2rem;
-  color: #1282A2;
+  color: #A8C1B1;
 }
 button {
   border: none;
@@ -96,14 +139,14 @@ button {
   transition-duration: 0.4s;
 }
 .button-on {
-  background-color: #034078;
+  background-color: #528364;
 }
 .button-on:hover {
-  background-color: #1282A2;
+  background-color: #A8C1B1;
 }
 .button-off {
   background-color: #858585;
 }
 .button-off:hover {
-  background-color: #252524;
+  background-color: #A8C1B1;
 } 

@@ -4,9 +4,154 @@
 <head>
    <meta charset='UTF-8'>
    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+   <link rel="stylesheet" type="text/css" href="/principal.css">
    <title>ESP8266 Sensor Data</title>
-   <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'
+   <!--<link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'
       integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'>
+   
+   <style>
+      /* Media query para telas grandes */
+      @media screen and (min-width: 992px) {
+         .col-lg-3 {
+            width: 30%;
+         }
+      }
+
+      /* Media query para telas médias */
+      @media screen and (min-width: 768px) and (max-width: 991px) {
+         .col-lg-3 {
+            width: 50%;
+         }
+      }
+
+      /* Media query para telas de smartphones */
+      @media screen and (max-width: 480px) {
+         .col-lg-3 {
+            width: 100%;
+         }
+      }
+
+      html {
+         font-family: Arial, Helvetica, sans-serif;
+         display: inline-block;
+         text-align: center;
+      }
+
+      h1 {
+         font-size: 1.8rem;
+         color: white;
+      }
+
+      p {
+         font-size: 1.4rem;
+         text-align: center;
+         margin-left: 5%;
+      }
+
+      .topnav {
+         overflow: hidden;
+         background-color: #528364;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+      }
+
+      .topnav h1 {
+         text-align: center;
+         /* Adiciona centralização horizontal */
+      }
+
+      .logo {
+         margin-right: 10px;
+      }
+
+      body {
+         margin: 0;
+      }
+
+      .content {
+         padding: 5%;
+      }
+
+      .row {
+         display: flex;
+         flex-wrap: wrap;
+         margin: 10px -10px;
+      }
+
+      .col-lg-3 {
+         flex: 0 0 30%;
+         max-width: 30%;
+         padding: 10px;
+      }
+
+      .card {
+         background-color: #f7f7f7;
+         border-radius: 5px;
+         box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+         overflow: hidden;
+      }
+
+      .card-body {
+         padding: 10px;
+         text-align: center;
+      }
+
+      .card-title {
+         margin: 0;
+         font-size: 1.2rem;
+         font-weight: bold;
+         color: #528364;
+      }
+
+      .card-subtitle {
+         margin: 5px 0 0;
+         font-size: 14px;
+         font-weight: normal;
+         color: #999;
+      }
+
+      .mb-2 {
+         margin-bottom: 10px;
+      }
+
+      .text-muted {
+         color: #999;
+      }
+
+      .units {
+         font-size: 10px;
+      }
+
+      .button-on,
+      .button-off {
+         background-color: #4CAF50;
+         border: none;
+         color: #fff;
+         padding: 10px 25px;
+         text-align: center;
+         text-decoration: none;
+         display: inline-block;
+         font-size: 12px;
+         border-radius: 3px;
+         cursor: pointer;
+         margin-right: 5px;
+         margin-top: 5px;
+         margin-bottom: 5px;
+      }
+
+      .button-off {
+         background-color: #f44336;
+      }
+
+      .p-on {
+         color: #4CAF50;
+      }
+
+      .p-off {
+         color: #f44336;
+      }
+   </style>-->
 </head>
 <script>
    setInterval(function () {
@@ -44,29 +189,32 @@
 </script>
 
 <body>
-   <h2 class="text-center">ESP Web Server</h2>
+   <div class="topnav">
+      <img src="/logo.png" alt="logo" class="logo" width="50px" height="50px">
+      <h1>ESP Wi-Fi Manager</h1>
+   </div>
    <div class="row">
       <div class="col-lg-3">
          <div class="card mb-3">
             <div class="card-body">
-               <h5 class="card-title">RELE 1-GPIO 13</h5>
+               <h5 class="card-title">RELE 1</h5><!--- GPIO 13-->
                <p>
                   <a href="/13/on"><button class="button-on">ON</button></a>
                   <a href="/13/off"><button class="button-off">OFF</button></a>
                </p>
-               <p>State: %STATE13%</p>
+               <p class="card-subtitle mb-2 text-muted">State: %STATE13%</p>
             </div>
          </div>
       </div>
       <div class="col-lg-3">
          <div class="card mb-3">
             <div class="card-body">
-               <h5 class="card-title">RELE 2 -GPIO 15</h5>
+               <p class="card-title">RELE 2 </p><!-- - GPIO 15-->
                <p>
                   <a href="/15/on"><button class="button-on">ON</button></a>
                   <a href="/15/off"><button class="button-off">OFF</button></a>
                </p>
-               <p> State: %STATE15%</p>
+               <p class="card-subtitle mb-2 text-muted"> State: %STATE15%</p>
             </div>
          </div>
       </div>
@@ -106,4 +254,5 @@
          </div>
       </div>
 </body>
+
 </html>

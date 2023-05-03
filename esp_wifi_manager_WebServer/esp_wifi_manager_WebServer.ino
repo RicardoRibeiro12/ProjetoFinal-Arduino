@@ -39,28 +39,37 @@ AsyncWebServer server(80);
 // Search for parameter in HTTP POST request
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
-const char* PARAM_INPUT_3 = "ip";
 const char* PARAM_INPUT_4 = "gateway";
+//campos da plataforma
+const char* PARAM_INPUT_5 = "email";
+const char* PARAM_INPUT_6 = "passplt";
 
 //Variables to save values from HTML form
 String ssid;
 String pass;
 String ip;
 String gateway;
+//campos da plataforma
+String email;
+String passplt;
 
 // File paths to save input values permanently
 const char* ssidPath = "/ssid.txt";
 const char* passPath = "/pass.txt";
 const char* ipPath = "/ip.txt";
 const char* gatewayPath = "/gateway.txt";
+//campos da plataforma
+const char* emailPlataformPath = "/email.txt";
+const char* passPlataformPath = "/passplt.txt";
 
-IPAddress localIP;
+//IPAddress localIP;
 //IPAddress localIP(192, 168, 1, 200); // hardcoded
 
 // Set your Gateway IP address
 IPAddress localGateway;
 //IPAddress localGateway(192, 168, 1, 1); //hardcoded
-IPAddress subnet(255, 255, 0, 0);
+//subnet nao penso que seja necessario
+//IPAddress subnet(255, 255, 0, 0);
 
 // Timer variables
 unsigned long previousMillis = 0;
@@ -108,20 +117,20 @@ void writeFile(fs::FS& fs, const char* path, const char* message) {
 }
 // Initialize WiFi
 bool initWiFi() {
-  if (ssid == "" || ip == "") {
-    Serial.println("Undefined SSID or IP address.");
+  if (ssid == "") {
+    Serial.println("Undefined SSID");
     return false;
   }
 
   WiFi.mode(WIFI_STA);
-  localIP.fromString(ip.c_str());
+  //localIP.fromString(ip.c_str());
+  WiFi.localIP().toString();
   localGateway.fromString(gateway.c_str());
-
-
-  if (!WiFi.config(localIP, localGateway, subnet)) {
+  /*--configuração ip gateawy esta tudo
+    if (!WiFi.config(localIP, localGateway, subnet)) {
     Serial.println("STA Failed to configure");
     return false;
-  }
+    }*/
   WiFi.begin(ssid.c_str(), pass.c_str());
   Serial.println("Connecting to WiFi...");
 
@@ -137,113 +146,40 @@ bool initWiFi() {
     Serial.println("Tentar dar Connect");
   }
   Serial.println(WiFi.localIP());
+  writeFile(LittleFS, ipPath, WiFi.localIP().toString().c_str());
+  /*File file = LittleFS.open("/gateway.txt", "r");
+    Serial.println("Ler Ficheiro do gateway");
+    while (file.available()) {
+    Serial.write(file.read());
+    }*/
+  //ligação ao gateway
+  // Conectar-se ao gateway
+  Serial.print("Conectando-se ao gateway em ");
+  Serial.println(gateway);
+  WiFiClient client;
+  if (!client.connect(gateway, 80)) {
+    Serial.println("Falha na conexão ao gateway.");
+    return false;
+  }
+  Serial.println("Conexão bem sucedida ao gateway.");
+  //enviar o ip user pass
+  /*File file = LittleFS.open("/email.txt", "r");
+    Serial.println("Ler Ficheiro do email");
+    while (file.available()) {
+    Serial.write(file.read());
+    }
+    File file2 = LittleFS.open("/passplt.txt", "r");
+    Serial.println("");
+    Serial.println("Ler Ficheiro do passplt");
+    while (file2.available()) {
+    Serial.write(file2.read());
+    }*/
   return true;
 }
 //----------------------------
-/*const char index_html[] PROGMEM = R"rawliteral(
-  <!DOCTYPE HTML>
-  <html>
-   <head>
-      <meta charset='UTF-8'>
-      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-      <title>ESP8266 Sensor Data</title>
-      <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'>
-      <style>
-         html
-         {font-family: Arial; display: inline-block; text-align: center;}
-         h2 {font-size: 3.0rem;}
-         p {font-size: 3.0rem;}
-         .switch {position: relative; display: inline-block; width: 120px; height: 68px}
-         .switch input {display: none}
-         .slider {position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 6px}
-         .slider:before {position: absolute; content: ""; height: 25px; width: 25px; left: 8px; bottom: 8px; background-color: #fff; -webkit-transition: .4s; transition: .4s; border-radius: 3px}
-         input:checked+.slider {background-color: #b30000}
-         input:checked+.slider:before {-webkit-transform: translateX(25px); -ms-transform: translateX(25px); transform: translateX(25px)}
-         }
-      </style>
-   </head>
-   <script>
-      function toggleCheckbox(element) {
-      var xhr = new XMLHttpRequest();
-      if(element.checked){ xhr.open("GET", "/update?output="+element.id+"&state=1", true); }
-      else { xhr.open("GET", "/update?output="+element.id+"&state=0", true); }
-      xhr.send();
-      }
-         setInterval(function ( ) {
-           var xhttp = new XMLHttpRequest();
-           xhttp.onreadystatechange = function() {
-             if (this.readyState == 4 && this.status == 200) {
-               document.getElementById("temperature").innerHTML = this.responseText;
-             }
-           };
-           xhttp.open("GET", "/temperature", true);
-           xhttp.send();
-         }, 2000) ;
-
-         setInterval(function ( ) {
-           var xhttp = new XMLHttpRequest();
-           xhttp.onreadystatechange = function() {
-             if (this.readyState == 4 && this.status == 200) {
-               document.getElementById("humidity").innerHTML = this.responseText;
-             }
-           };
-           xhttp.open("GET", "/humidity", true);
-           xhttp.send();
-         }, 2000 ) ;
-
-         setInterval(function ( ) {
-           var xhttp = new XMLHttpRequest();
-           xhttp.onreadystatechange = function() {
-             if (this.readyState == 4 && this.status == 200) {
-               document.getElementById("ldr").innerHTML = this.responseText;
-             }
-           };
-           xhttp.open("GET", "/ldr", true);
-           xhttp.send();
-         }, 2000 ) ;
-   </script>
-   <body>
-      <h2 class="text-center">ESP Web Server</h2>
-      %BUTTONPLACEHOLDER%
-      <div class="row">
-      <div class="col-lg-3">
-         <div class="card mb-3">
-            <div class="card-body">
-               <h5 class="card-title">Temperature</h5>
-               <h6 class="card-subtitle mb-2 text-muted">
-                  <span id="temperature">%TEMPERATURE%</span>
-                  <sup class="units">&deg;C</sup>
-               </h6>
-            </div>
-         </div>
-      </div>
-      <div class="col-lg-3">
-         <div class="card mb-3">
-            <div class="card-body">
-               <h5 class="card-title">Humidade</h5>
-               <h6 class="card-subtitle mb-2 text-muted">
-                  <span id="humidity">%HUMIDITY%</span>
-                  <sup class="units">&percnt;</sup>
-               </h6>
-            </div>
-         </div>
-      </div>
-      <div class="col-lg-3">
-         <div class="card mb-3">
-            <div class="card-body">
-               <h5 class="card-title">LDR</h5>
-               <h6 class="card-subtitle mb-2 text-muted">
-                  <span id="ldr">%LDR%</span>
-                  <sup class="units">v</sup>
-               </h6>
-            </div>
-         </div>
-      </div>
-   </body>
-  </html>)rawliteral";*/
 // Replaces placeholder with button section in your web page
 String processor(const String& var) {
-  Serial.println(var);
+  //Serial.println(var);
   if (var == "STATE13") {
     if (digitalRead(relePin13)) {
       releState13 = "ON";
@@ -254,7 +190,7 @@ String processor(const String& var) {
     return releState13;
   }
   else if (var == "STATE15") {
-    if (digitalRead(relePin15)) { 
+    if (digitalRead(relePin15)) {
       releState15 = "ON";
     }
     else {
@@ -282,12 +218,17 @@ void setup() {
   // Load values saved in LittleFS
   ssid = readFile(LittleFS, ssidPath);
   pass = readFile(LittleFS, passPath);
-  ip = readFile(LittleFS, ipPath);
+  //ip = readFile(LittleFS, ipPath);
   gateway = readFile (LittleFS, gatewayPath);
+  //Load Values saved Paltaform
+  email = readFile (LittleFS, emailPlataformPath);
+  passplt = readFile (LittleFS, passPlataformPath);
   Serial.println(ssid);
   Serial.println(pass);
-  Serial.println(ip);
+  //Serial.println(ip);
   Serial.println(gateway);
+  Serial.println(email);
+  Serial.println(passplt);
   //----------------------------
   dht.begin();
   pinMode(relePin13, OUTPUT);
@@ -296,15 +237,23 @@ void setup() {
   digitalWrite(relePin15, LOW);
 
   if (initWiFi()) {
+    // Route to load style.css file
+    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(LittleFS, "/style.css", "text/css");
+    });
+    server.on("/principal.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(LittleFS, "/principal.css", "text/css");
+    });
+    //Route to load logo.png file
+    server.on("/logo.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(LittleFS, "/logo.png", "image/png");
+    });
     // Route for root / web page
     server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(LittleFS, "/index.html", String(), false, processor);
     });
     server.serveStatic("/", LittleFS, "/");
-    // Route to load style.css file
-    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-      request->send(SPIFFS, "/style.css", "text/css");
-    });
+
     //----------------------------
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(t).c_str());
@@ -323,21 +272,25 @@ void setup() {
     server.on("/13/on", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin13, HIGH);
       request->send(LittleFS, "/index.html", String(), false, processor);
+      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to LOW
     server.on("/13/off", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin13, LOW);
       request->send(LittleFS, "/index.html", String(), false, processor);
+      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to HIGH
     server.on("/15/on", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin15, HIGH);
       request->send(LittleFS, "/index.html", String(), false, processor);
+      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to LOW
     server.on("/15/off", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin15, LOW);
       request->send(LittleFS, "/index.html", String(), false, processor);
+      //request->send(LittleFS, "/principal.css", "text/css");
     });
     //----------------------------
     // Start server
@@ -381,14 +334,6 @@ void setup() {
             // Write file to save value
             writeFile(LittleFS, passPath, pass.c_str());
           }
-          // HTTP POST ip value
-          if (p->name() == PARAM_INPUT_3) {
-            ip = p->value().c_str();
-            Serial.print("IP Address set to: ");
-            Serial.println(ip);
-            // Write file to save value
-            writeFile(LittleFS, ipPath, ip.c_str());
-          }
           // HTTP POST gateway value
           if (p->name() == PARAM_INPUT_4) {
             gateway = p->value().c_str();
@@ -397,10 +342,26 @@ void setup() {
             // Write file to save value
             writeFile(LittleFS, gatewayPath, gateway.c_str());
           }
+          // HTTP POST email Plataforma value
+          if (p->name() == PARAM_INPUT_5) {
+            email = p->value().c_str();
+            Serial.print("Email Plataforma set to: ");
+            Serial.println(email);
+            // Write file to save value
+            writeFile(LittleFS, emailPlataformPath, email.c_str());
+          }
+          // HTTP POST pass Plataforma value
+          if (p->name() == PARAM_INPUT_6) {
+            passplt = p->value().c_str();
+            Serial.print("Pass Plataforma set to: ");
+            Serial.println(passplt);
+            // Write file to save value
+            writeFile(LittleFS, passPlataformPath, passplt.c_str());
+          }
           //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
       }
-      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
+      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to Plataform see IP");
       //delay(3000);
       ESP.restart();
     });
@@ -415,38 +376,37 @@ void loop() {
     previousMillisSensor = currentMillis;
     // Read temperature as Celsius (the default)
     float newT = dht.readTemperature();
-    Serial.print("Temperatura---- ");
-    Serial.println(newT);
-    // Read temperature as Fahrenheit (isFahrenheit = true)
-    //float newT = dht.readTemperature(true);
-    // if temperature read failed, don't change t value
+    //Serial.print("Temperatura---- ");
+    //Serial.println(newT);
     if (isnan(newT)) {
       Serial.println("Failed to read from DHT sensor!");
     } else {
       t = newT;
-      Serial.println(t);
+      //Serial.println(t);
     }
     // Read Humidity
     float newH = dht.readHumidity();
-    Serial.print("Humidade---- ");
-    Serial.println(newH);
+    //Serial.print("Humidade---- ");
+    //Serial.println(newH);
     // if humidity read failed, don't change h value
     if (isnan(newH)) {
       Serial.println("Failed to read from DHT sensor!");
     } else {
       h = newH;
-      Serial.println(h);
+      //Serial.println(h);
     }
     // Read LDR
     float newL = analogRead(LDRPIN);
-    Serial.print("LDR---- ");
-    Serial.println(newL);
+    //Serial.print("LDR---- ");
+    //Serial.println(newL);
     // if ldr read failed, don't change h value
     if (isnan(newL)) {
       Serial.println("Failed to read from LDR sensor!");
     } else {
       l = newL;
-      Serial.println(l);
+      //Serial.println(l);
     }
   }
+  //-------------------------------------------------
+
 }
