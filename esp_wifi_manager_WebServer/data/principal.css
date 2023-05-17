@@ -1,20 +1,65 @@
 /* Media query para telas grandes */
 @media screen and (min-width: 992px) {
   .col-lg-3 {
-     width: 30%;
+    width: 30%;
+    padding: 10px;
+  }
+  .col-lg {
+    flex-basis: 48%;
+    max-width: 48%;
+    padding: 10px;
   }
 }
 /* Media query para telas médias */
 @media screen and (min-width: 768px) and (max-width: 991px) {
   .col-lg-3 {
-     width: 50%;
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+  .col-md-3 {
+    flex-basis: 45%;
+    width: 45%;
+    padding: 10px;
+  }
+  .col-md {
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+
+}
+/* Media query entre 481px e 767px */
+@media screen and (min-width: 481px) and (max-width: 767px) {
+  .col-lg-3 {
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+  .col-md-3 {
+    flex-basis: 45%;
+    width: 45%;
+    padding: 10px;
+  }
+  .col-md {
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
   }
 }
 /* Media query para telas de smartphones */
 @media screen and (max-width: 480px) {
   .col-lg-3 {
-     width: 100%;
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
   }
+  .col-sm {
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+ 
 }
 
 html {
@@ -58,14 +103,14 @@ body {
 .row {
   display: flex;
   flex-wrap: wrap;
-  margin: 10px -10px;
+  margin: 10px ;
 }
 
-.col-lg-3 {
+/*.col-lg-3 {
   flex: 0 0 30%;
   max-width: 30%;
   padding: 10px;
-}
+}*/
 
 .card {
   background-color: #f7f7f7;
@@ -132,4 +177,51 @@ body {
 
 .p-off {
   color: #f44336;
+}
+
+input[type=submit] {
+  border: none;
+  color: #FEFCFB;
+  background-color: #528364;
+  padding: 15px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  width: 100px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  transition-duration: 0.4s;
+  }
+
+input[type=submit]:hover {
+  background-color: #A8C1B1;
+  
+}
+
+input[type=text], input[type=number], input[type=password], select {
+  width: 68%;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  margin-bottom: 18px;
+}
+
+label {
+  font-size: 1.2rem; 
+  display: inline-block;
+  width: 30%;
+  text-align: center;
+  margin-right: 2%;
+}
+.value{
+  font-size: 1.2rem;
+  color: #A8C1B1;  
+}
+.state {
+  font-size: 1.2rem;
+  color: #A8C1B1;
 }

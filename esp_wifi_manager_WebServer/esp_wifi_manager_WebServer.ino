@@ -8,13 +8,9 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 //----------------------------
-//#include <AsyncTCP.h> so para esp32
 #include <LittleFS.h>
 #include "FS.h"
 //----------------------------
-
-/*const char* ssid = "Vodafone-8B921A";
-  const char* password = "8xSGAdbGq5";*/
 //DHT
 #define DHTPIN 0
 #define DHTTYPE DHT11
@@ -36,40 +32,30 @@ String releState15;
 //----------------------------
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
-// Search for parameter in HTTP POST request
+// HTTP POST request WFIMANAGER
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
-const char* PARAM_INPUT_4 = "gateway";
-//campos da plataforma
-const char* PARAM_INPUT_5 = "email";
-const char* PARAM_INPUT_6 = "passplt";
-
+// HTTP POST request Index
+const char* PARAM_INPUT_3 = "serverIp";
+const char* PARAM_INPUT_4 = "emailPlt";
+const char* PARAM_INPUT_5 = "passwordPlt";
 //Variables to save values from HTML form
 String ssid;
 String pass;
 String ip;
-String gateway;
+String serverIp;
 //campos da plataforma
-String email;
-String passplt;
+String emailPlt;
+String passwordPlt;
 
 // File paths to save input values permanently
 const char* ssidPath = "/ssid.txt";
 const char* passPath = "/pass.txt";
 const char* ipPath = "/ip.txt";
-const char* gatewayPath = "/gateway.txt";
+const char* serverIpPath = "/server.txt";
 //campos da plataforma
-const char* emailPlataformPath = "/email.txt";
-const char* passPlataformPath = "/passplt.txt";
-
-//IPAddress localIP;
-//IPAddress localIP(192, 168, 1, 200); // hardcoded
-
-// Set your Gateway IP address
-IPAddress localGateway;
-//IPAddress localGateway(192, 168, 1, 1); //hardcoded
-//subnet nao penso que seja necessario
-//IPAddress subnet(255, 255, 0, 0);
+/*const char* emailPlataformPath = "/email.txt";
+  const char* passPlataformPath = "/passplt.txt";*/
 
 // Timer variables
 unsigned long previousMillis = 0;
@@ -99,7 +85,6 @@ String readFile(fs::FS& fs, const char* path) {
   }
   return fileContent;
 }
-
 // Write file to LittleFS
 void writeFile(fs::FS& fs, const char* path, const char* message) {
   Serial.printf("Writing file: %s\r\n", path);
@@ -115,22 +100,16 @@ void writeFile(fs::FS& fs, const char* path, const char* message) {
     Serial.println("- write failed");
   }
 }
+
 // Initialize WiFi
 bool initWiFi() {
   if (ssid == "") {
     Serial.println("Undefined SSID");
     return false;
   }
-
   WiFi.mode(WIFI_STA);
   //localIP.fromString(ip.c_str());
   WiFi.localIP().toString();
-  localGateway.fromString(gateway.c_str());
-  /*--configuração ip gateawy esta tudo
-    if (!WiFi.config(localIP, localGateway, subnet)) {
-    Serial.println("STA Failed to configure");
-    return false;
-    }*/
   WiFi.begin(ssid.c_str(), pass.c_str());
   Serial.println("Connecting to WiFi...");
 
@@ -145,39 +124,13 @@ bool initWiFi() {
     }
     Serial.println("Tentar dar Connect");
   }
-  Serial.println(WiFi.localIP());
-  writeFile(LittleFS, ipPath, WiFi.localIP().toString().c_str());
-  /*File file = LittleFS.open("/gateway.txt", "r");
-    Serial.println("Ler Ficheiro do gateway");
-    while (file.available()) {
-    Serial.write(file.read());
-    }*/
-  //ligação ao gateway
-  // Conectar-se ao gateway
-  Serial.print("Conectando-se ao gateway em ");
-  Serial.println(gateway);
-  WiFiClient client;
-  if (!client.connect(gateway, 80)) {
-    Serial.println("Falha na conexão ao gateway.");
-    return false;
-  }
-  Serial.println("Conexão bem sucedida ao gateway.");
-  //enviar o ip user pass
-  /*File file = LittleFS.open("/email.txt", "r");
-    Serial.println("Ler Ficheiro do email");
-    while (file.available()) {
-    Serial.write(file.read());
-    }
-    File file2 = LittleFS.open("/passplt.txt", "r");
-    Serial.println("");
-    Serial.println("Ler Ficheiro do passplt");
-    while (file2.available()) {
-    Serial.write(file2.read());
-    }*/
+
+  ip = WiFi.localIP().toString();
+  Serial.println(ip);
+  writeFile(LittleFS, ipPath, ip.c_str());
   return true;
 }
 //----------------------------
-// Replaces placeholder with button section in your web page
 String processor(const String& var) {
   //Serial.println(var);
   if (var == "STATE13") {
@@ -207,28 +160,36 @@ String processor(const String& var) {
   else if (var == "LDR") {
     return String(l);
   }
+  else if (var == "IP") {
+    return String(ip);
+  }
+  else if (var == "SSID") {
+    return String(ssid);
+  }
+  else if (var == "PASS") {
+    return String(pass);
+  }
+  else if (var == "SERVER") {
+    return String(serverIp);
+  }
+  else if (var == "EMAIL") {
+    return String(emailPlt);
+  }
+  else if (var == "PASSPLT") {
+    return String(passwordPlt);
+  }
   return String();
 }
 void setup() {
-  // put your setup code here, to run once:
-  // Serial port for debugging purposes
   Serial.begin(9600);
   //----------------------------
   initLittleFS();
   // Load values saved in LittleFS
   ssid = readFile(LittleFS, ssidPath);
   pass = readFile(LittleFS, passPath);
-  //ip = readFile(LittleFS, ipPath);
-  gateway = readFile (LittleFS, gatewayPath);
-  //Load Values saved Paltaform
-  email = readFile (LittleFS, emailPlataformPath);
-  passplt = readFile (LittleFS, passPlataformPath);
+  ip = readFile(LittleFS, ipPath);
   Serial.println(ssid);
   Serial.println(pass);
-  //Serial.println(ip);
-  Serial.println(gateway);
-  Serial.println(email);
-  Serial.println(passplt);
   //----------------------------
   dht.begin();
   pinMode(relePin13, OUTPUT);
@@ -257,43 +218,96 @@ void setup() {
     //----------------------------
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(t).c_str());
-      //request->send(LittleFS, "/index.html", "text/html", false, processor);
     });
     server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(h).c_str());
-      //request->send(LittleFS, "/index.html", "text/html", false, processor);
     });
     server.on("/ldr", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(l).c_str());
-      //request->send(LittleFS, "/index.html", "text/html", false, processor);
     });
     //----------------------------
     // Route to set GPIO state to HIGH
     server.on("/13/on", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin13, HIGH);
       request->send(LittleFS, "/index.html", String(), false, processor);
-      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to LOW
     server.on("/13/off", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin13, LOW);
       request->send(LittleFS, "/index.html", String(), false, processor);
-      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to HIGH
     server.on("/15/on", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin15, HIGH);
       request->send(LittleFS, "/index.html", String(), false, processor);
-      //request->send(LittleFS, "/principal.css", "text/css");
     });
     // Route to set GPIO state to LOW
     server.on("/15/off", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin15, LOW);
       request->send(LittleFS, "/index.html", String(), false, processor);
-      //request->send(LittleFS, "/principal.css", "text/css");
     });
-    //----------------------------
-    // Start server
+    server.on("/", HTTP_POST, [](AsyncWebServerRequest * request) {
+      int params = request->params();
+      for (int i = 0; i < params; i++) {
+        AsyncWebParameter* p = request->getParam(i);
+        if (p->isPost()) {
+          // HTTP POST ssid value
+          if (p->name() == PARAM_INPUT_1) {
+            ssid = p->value().c_str();
+            Serial.print("SSID set to: ");
+            Serial.println(ssid);
+            // Write file to save value
+            writeFile(LittleFS, ssidPath, ssid.c_str());
+          }
+          // HTTP POST pass value
+          if (p->name() == PARAM_INPUT_2) {
+            pass = p->value().c_str();
+            Serial.print("Password set to: ");
+            Serial.println(pass);
+            // Write file to save value
+            writeFile(LittleFS, passPath, pass.c_str());
+          }
+          // HTTP POST SERVER IP value
+          if (p->name() == PARAM_INPUT_3) {
+            serverIp = p->value().c_str();
+            Serial.print("SERVER IP set to: ");
+            Serial.println(serverIp);
+            // Write file to save value
+            writeFile(LittleFS, serverIpPath, serverIp.c_str());
+          }
+          // HTTP POST EMAIL PLT value
+          if (p->name() == PARAM_INPUT_4) {
+            emailPlt = p->value().c_str();
+            Serial.print("EMAIL PLT set to: ");
+            Serial.println(emailPlt);
+            // Write file to save value
+            //writeFile(LittleFS, passPath, pass.c_str());
+          }
+          // HTTP POST PASSWORD PLT value
+          if (p->name() == PARAM_INPUT_5) {
+            passwordPlt = p->value().c_str();
+            Serial.print("PASSWORD PLT set to: ");
+            Serial.println(passwordPlt);
+            // Write file to save value
+            //writeFile(LittleFS, passPath, passwordPlt.c_str());
+          }
+        }
+      }
+      // Verificar qual botão foi pressionado
+      if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2)) {
+        // Lógica para o Botão 1...
+        Serial.println("Botão 1 pressionado");
+        Serial.println("Novas Credenciais SSID-" + ssid + " Pass- " + pass);
+        // Outras operações para o Botão 1...
+      } else if (request->hasParam(PARAM_INPUT_3) && request->hasParam(PARAM_INPUT_4) && request->hasParam(PARAM_INPUT_5)) {
+        // Lógica para o Botão 2...
+        Serial.println("Botão 2 pressionado");
+        Serial.println("Novos dados ip server " + serverIp + " Email Plt- " + emailPlt + " Password Plt- " + passwordPlt);
+        // Outras operações para o Botão 2...
+      }
+
+      request->send(LittleFS, "/index.html", String(), false, processor);
+    });
     server.begin();
   }
   else {
@@ -301,7 +315,6 @@ void setup() {
     Serial.println("Setting AP (Access Point)");
     // NULL sets an open Access Point
     WiFi.softAP("ESP-WIFI-MANAGER", NULL);
-
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(IP);
@@ -334,35 +347,8 @@ void setup() {
             // Write file to save value
             writeFile(LittleFS, passPath, pass.c_str());
           }
-          // HTTP POST gateway value
-          if (p->name() == PARAM_INPUT_4) {
-            gateway = p->value().c_str();
-            Serial.print("Gateway set to: ");
-            Serial.println(gateway);
-            // Write file to save value
-            writeFile(LittleFS, gatewayPath, gateway.c_str());
-          }
-          // HTTP POST email Plataforma value
-          if (p->name() == PARAM_INPUT_5) {
-            email = p->value().c_str();
-            Serial.print("Email Plataforma set to: ");
-            Serial.println(email);
-            // Write file to save value
-            writeFile(LittleFS, emailPlataformPath, email.c_str());
-          }
-          // HTTP POST pass Plataforma value
-          if (p->name() == PARAM_INPUT_6) {
-            passplt = p->value().c_str();
-            Serial.print("Pass Plataforma set to: ");
-            Serial.println(passplt);
-            // Write file to save value
-            writeFile(LittleFS, passPlataformPath, passplt.c_str());
-          }
-          //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
       }
-      request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to Plataform see IP");
-      //delay(3000);
       ESP.restart();
     });
     server.begin();
