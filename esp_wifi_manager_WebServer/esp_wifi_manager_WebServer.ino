@@ -11,6 +11,12 @@
 #include <LittleFS.h>
 #include "FS.h"
 //----------------------------
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+WiFiClient client;  // Criação da variável client do tipo WiFiClient
+//----------------------------
+
+
 //DHT
 #define DHTPIN 0
 #define DHTTYPE DHT11
@@ -56,7 +62,7 @@ const char* serverIpPath = "/server.txt";
 //campos da plataforma
 /*const char* emailPlataformPath = "/email.txt";
   const char* passPlataformPath = "/passplt.txt";*/
-
+const char *host = "http://192.168.1.191/api/obsdatas";   //your IP/web server address
 // Timer variables
 unsigned long previousMillis = 0;
 const long interval = 10000;  // interval to wait for Wi-Fi connection (milliseconds)
@@ -128,6 +134,21 @@ bool initWiFi() {
   ip = WiFi.localIP().toString();
   Serial.println(ip);
   writeFile(LittleFS, ipPath, ip.c_str());
+  //-----------
+  WiFi.softAP("ESP-WIFI-MANAGER", NULL);
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
+
+  if (ip != "")
+  {
+    Serial.println("ESTE E O IP NA REDE " + ip);
+    // Web Server Root URL
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->redirect("http://" + ip + "/home");
+    });
+  }
+
   return true;
 }
 //----------------------------
@@ -190,6 +211,8 @@ void setup() {
   ip = readFile(LittleFS, ipPath);
   Serial.println(ssid);
   Serial.println(pass);
+  Serial.println(ip);
+
   //----------------------------
   dht.begin();
   pinMode(relePin13, OUTPUT);
@@ -198,6 +221,9 @@ void setup() {
   digitalWrite(relePin15, LOW);
 
   if (initWiFi()) {
+    Serial.println("Já vim com o initwifi a true");
+    //--------------
+
     // Route to load style.css file
     server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(LittleFS, "/style.css", "text/css");
@@ -210,14 +236,15 @@ void setup() {
       request->send(LittleFS, "/logo.png", "image/png");
     });
     // Route for root / web page
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+    //fazer redirect para /home
+    server.on("/home", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(LittleFS, "/index.html", String(), false, processor);
     });
     server.serveStatic("/", LittleFS, "/");
-
     //----------------------------
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(t).c_str());
+      //WiFi.mode(WIFI_STA);
     });
     server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send_P(200, "text/plain", String(h).c_str());
@@ -226,10 +253,18 @@ void setup() {
       request->send_P(200, "text/plain", String(l).c_str());
     });
     //----------------------------
+    server.on("/desligar", HTTP_GET, [](AsyncWebServerRequest * request) {
+      //WiFi.mode(WIFI_STA);
+      WiFi.softAPdisconnect (true);
+      Serial.println("Desligar AP");
+      request->send(LittleFS, "/index.html", String(), false, processor);
+    });
+    //----------------------------
     // Route to set GPIO state to HIGH
     server.on("/13/on", HTTP_GET, [](AsyncWebServerRequest * request) {
       digitalWrite(relePin13, HIGH);
       request->send(LittleFS, "/index.html", String(), false, processor);
+
     });
     // Route to set GPIO state to LOW
     server.on("/13/off", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -309,6 +344,8 @@ void setup() {
       request->send(LittleFS, "/index.html", String(), false, processor);
     });
     server.begin();
+
+
   }
   else {
     // Connect to Wi-Fi network with SSID and password
@@ -392,7 +429,23 @@ void loop() {
       l = newL;
       //Serial.println(l);
     }
-  }
+  
   //-------------------------------------------------
+  HTTPClient http; 
+  //prepare request
+  String postData;
+  int idsensor=1;
+  String medida= "C";
+  
+  postData = "id_sensor=" + String(idsensor) + "&valor=" + String(newT) + "&unidade_medida=" + String(medida); 
+  http.begin(client, host);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpCode = http.POST(postData);
+  String payload = http.getString();
+ 
+  Serial.println(httpCode);
+  Serial.println(payload);
+  http.end();
 
+}
 }

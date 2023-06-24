@@ -33,15 +33,31 @@
           <input type="password" id="passplt" name="passplt" required><br>
           <label for="gateway">Server Address</label>
           <input type="text" id="gateway" name="gateway" placeholder="192.168.1.1"><br>-->
-          <input type="submit" value="Submit"  id="meuBotao">
+          <input type="checkbox" onclick="togglePasswordVisibility()" style="text-align: left;margin-bottom:20px;">Show
+          Password<br>
+          <input type="submit" value="Submit" id="meuBotao">
         </form>
       </div>
     </div>
   </div>
 </body>
 <script>
-  document.getElementById("meuBotao").addEventListener("click", function() {
-    window.location.href = "https://www.google.com";
+  function togglePasswordVisibility() {
+    var passwordInput = document.getElementById("pass");
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+    } else {
+      passwordInput.type = "password";
+    }
+  }
+  // Obtém uma referência para o botão pelo seu ID
+  const botao = document.getElementById('meuBotao');
+
+  // Adiciona um evento de clique ao botão
+  botao.addEventListener('click', function () {
+    // Exibe uma caixa de alerta do navegador
+    alert('Por favor! Ligue-se novamente ao ESP-AP para obter o ip obtido pelo seu ESP');
   });
 </script>
+
 </html>
