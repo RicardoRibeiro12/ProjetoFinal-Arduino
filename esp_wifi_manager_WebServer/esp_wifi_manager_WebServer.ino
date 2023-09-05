@@ -81,7 +81,7 @@ const char* mqttTopic = "1";
 unsigned long previousMillisMqtt = 0;
 unsigned long previousMillisHttp = 0;
 const unsigned long mqttInterval = 1000; // Adjust as needed
-const unsigned long httpInterval = 5000; // Adjust as needed
+const unsigned long httpInterval = 150000; // Adjust as needed
 
 // Initialize LittleFS
 void initLittleFS() {
@@ -509,7 +509,7 @@ void loop() {
     if (currentMillis - previousMillisHttp >= httpInterval) {
       previousMillisHttp = currentMillis;
       // Non-blocking HTTP requests using HTTPClient
-      makeHTTPRequest(newT);
+      makeHTTPRequest(newT,newH,newL);
 
     }
 
@@ -523,20 +523,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message: ");
   Serial.write(payload, length);
   Serial.println();
-  // Use strcmp para comparar as strings
-  if (strcmp((char*)payload, "1 desligar") == 0) {
+  
+  char* message = reinterpret_cast<char*>(payload);
+  if (strlen(message) > 0) {
+    message[strlen(message) - 1] = '\0'; // Remove the last character
+  }
+  //-----------
+  if (strcmp(message, "1 desligar") == 0) {
     digitalWrite(relePin13, LOW);
     Serial.println("Rele desligado");
   }
-  else if (strcmp((char*)payload, "1 ligar") == 0) {
+  else if (strcmp(message, "1 ligar") == 0) {
     digitalWrite(relePin13, HIGH);
     Serial.println("Rele ligado");
   }
-  else if (strcmp((char*)payload, "2 desligar") == 0) {
+  else if (strcmp(message, "2 desligar") == 0) {
     digitalWrite(relePin15, LOW);
-    Serial.println("Rele ligado");
+    Serial.println("Rele desligado");
   }
-  else if (strcmp((char*)payload, "2 ligar") == 0) {
+  else if (strcmp(message, "2 ligar") == 0) {
     digitalWrite(relePin15, HIGH);
     Serial.println("Rele ligado");
   }
@@ -552,7 +557,7 @@ void reconnect() {
     // Attempt to connect
     if (mqttclient.connect(clientId.c_str())) {
       Serial.println("Connected to MQTT broker");
-      mqttclient.subscribe("1");
+      mqttclient.subscribe(mqtt_topic);
     } else {
       Serial.print("Failed, rc=");
       Serial.print(mqttclient.state());
@@ -563,20 +568,39 @@ void reconnect() {
   }
 }
 
-void makeHTTPRequest(float newT) {
+void makeHTTPRequest(float newT, float newH,float newL) {
   HTTPClient http;
-  //prepare request
-  String postData;
-  int idsensor = 1;
-  String medida = "C";
-
   http.setTimeout(10000);
-  postData = "id_sensor=" + String(idsensor) + "&valor=" + String(newT) + "&unidade_medida=" + String(medida);
+  //prepare request
+  //----------SENSOR DHT 11 - ID 1 - Temperatura
+  String postDataT;
+  int idsensorT = 1;
+  String medidaT = "C";
+  //---
+  postDataT = "id_sensor=" + String(idsensorT) + "&valor=" + String(newT) + "&unidade_medida=" + String(medidaT);
   http.begin(client, host);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int httpCode = http.POST(postData);
+  int httpCode = http.POST(postDataT);  
+  //----------SENSOR DHT 11 - ID 2 - Humidade
+  String postDataH;
+  int idsensorH = 2;
+  String medidaH = "%";
+  //---
+  postDataH = "id_sensor=" + String(idsensorH) + "&valor=" + String(newH) + "&unidade_medida=" + String(medidaH);
+  http.begin(client, host);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpCode = http.POST(postDataH);  
+  //----------SENSOR LDR - ID 3 - Luminosidade
+  String postDataL;
+  int idsensorL = 3;
+  String medidaL = "V";
+  //---
+  postDataL = "id_sensor=" + String(idsensorL) + "&valor=" + String(newL) + "&unidade_medida=" + String(medidaL);
+  http.begin(client, host);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpCode = http.POST(postDataL);  
+  
   String payload2 = http.getString();
-
   Serial.println(httpCode);
   Serial.println(payload2);
   http.end();
