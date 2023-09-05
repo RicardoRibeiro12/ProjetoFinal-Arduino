@@ -523,6 +523,23 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message: ");
   Serial.write(payload, length);
   Serial.println();
+  // Use strcmp para comparar as strings
+  if (strcmp((char*)payload, "1 desligar") == 0) {
+    digitalWrite(relePin13, LOW);
+    Serial.println("Rele desligado");
+  }
+  else if (strcmp((char*)payload, "1 ligar") == 0) {
+    digitalWrite(relePin13, HIGH);
+    Serial.println("Rele ligado");
+  }
+  else if (strcmp((char*)payload, "2 desligar") == 0) {
+    digitalWrite(relePin15, LOW);
+    Serial.println("Rele ligado");
+  }
+  else if (strcmp((char*)payload, "2 ligar") == 0) {
+    digitalWrite(relePin15, HIGH);
+    Serial.println("Rele ligado");
+  }
 }
 
 void reconnect() {
