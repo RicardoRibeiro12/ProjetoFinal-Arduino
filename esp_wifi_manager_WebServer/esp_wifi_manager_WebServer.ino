@@ -1,3 +1,4 @@
+#include <PubSubClient.h>
 #include <DHT.h>
 #include <String.h>
 #include <DNSServer.h>
@@ -14,6 +15,11 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 WiFiClient client;  // Criação da variável client do tipo WiFiClient
+// Create an instance of the PubSubClient class
+PubSubClient mqttclient(client);
+const char* mqtt_server = "192.168.1.151";
+const int mqtt_port = 1883;
+const char* mqtt_topic = "1"; // Replace with the topic you want to subscribe to
 //----------------------------
 
 
@@ -43,29 +49,39 @@ const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
 // HTTP POST request Index
 const char* PARAM_INPUT_3 = "serverIp";
-const char* PARAM_INPUT_4 = "emailPlt";
-const char* PARAM_INPUT_5 = "passwordPlt";
+const char* PARAM_INPUT_4 = "token";
 //Variables to save values from HTML form
 String ssid;
 String pass;
 String ip;
 String serverIp;
 //campos da plataforma
-String emailPlt;
-String passwordPlt;
+String token;
 
 // File paths to save input values permanently
 const char* ssidPath = "/ssid.txt";
 const char* passPath = "/pass.txt";
 const char* ipPath = "/ip.txt";
 const char* serverIpPath = "/server.txt";
-//campos da plataforma
-/*const char* emailPlataformPath = "/email.txt";
-  const char* passPlataformPath = "/passplt.txt";*/
-const char *host = "http://192.168.1.191/api/obsdatas";   //your IP/web server address
+const char* tokenIpPath = "/token.txt";
+
+const char *host = "http://192.168.1.151/api/obsdatas";   //your IP/web server address
 // Timer variables
 unsigned long previousMillis = 0;
-const long interval = 10000;  // interval to wait for Wi-Fi connection (milliseconds)
+const long interval = 10000;  //interval to wait for Wi-Fi connection (milliseconds)
+
+// MQTT values
+const char* mqttServer = "192.168.1.151";
+const int mqttPort = 1883;
+//id do controlador na plataforma
+const char* mqttTopic = "1";
+
+
+
+unsigned long previousMillisMqtt = 0;
+unsigned long previousMillisHttp = 0;
+const unsigned long mqttInterval = 1000; // Adjust as needed
+const unsigned long httpInterval = 5000; // Adjust as needed
 
 // Initialize LittleFS
 void initLittleFS() {
@@ -107,7 +123,6 @@ void writeFile(fs::FS& fs, const char* path, const char* message) {
   }
 }
 
-// Initialize WiFi
 bool initWiFi() {
   if (ssid == "") {
     Serial.println("Undefined SSID");
@@ -140,6 +155,8 @@ bool initWiFi() {
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
+
+
   if (ip != "")
   {
     Serial.println("ESTE E O IP NA REDE " + ip);
@@ -147,10 +164,19 @@ bool initWiFi() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->redirect("http://" + ip + "/home");
     });
-  }
 
+
+  }
+  delay(5000);
   return true;
 }
+
+
+
+
+
+// Initialize WiFi
+
 //----------------------------
 String processor(const String& var) {
   //Serial.println(var);
@@ -193,26 +219,27 @@ String processor(const String& var) {
   else if (var == "SERVER") {
     return String(serverIp);
   }
-  else if (var == "EMAIL") {
-    return String(emailPlt);
-  }
-  else if (var == "PASSPLT") {
-    return String(passwordPlt);
+  else if (var == "TOKEN") {
+    return String(token);
   }
   return String();
 }
 void setup() {
-  Serial.begin(9600);
+
+  Serial.begin(115200);
   //----------------------------
   initLittleFS();
   // Load values saved in LittleFS
   ssid = readFile(LittleFS, ssidPath);
   pass = readFile(LittleFS, passPath);
   ip = readFile(LittleFS, ipPath);
+  serverIp = readFile(LittleFS, serverIpPath);
+  token = readFile(LittleFS, tokenIpPath);
   Serial.println(ssid);
   Serial.println(pass);
   Serial.println(ip);
-
+  Serial.println(serverIp);
+  Serial.println(token);
   //----------------------------
   dht.begin();
   pinMode(relePin13, OUTPUT);
@@ -220,9 +247,30 @@ void setup() {
   pinMode(relePin15, OUTPUT);
   digitalWrite(relePin15, LOW);
 
+  mqttclient.setServer(mqttServer, mqttPort);
+  mqttclient.setCallback(callback);
+  mqttclient.subscribe("1");
+
+  HTTPClient http;
+
   if (initWiFi()) {
     Serial.println("Já vim com o initwifi a true");
     //--------------
+
+    /*  while (!mqttclient.connected()) {
+      Serial.println("Connecting to MQTT broker...");
+      if (mqttclient.connect("ESP8266Client")) {
+        Serial.println("Connected to MQTT broker");
+        Serial.println("subscibing");
+        Serial.println(mqttclient.subscribe(mqttTopic));
+      } else {
+        Serial.print("Failed, rc=");
+        Serial.print(mqttclient.state());
+        Serial.println(" Retrying in 5 seconds...");
+        delay(5000);
+      }
+      }
+    */
 
     // Route to load style.css file
     server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -310,21 +358,13 @@ void setup() {
             // Write file to save value
             writeFile(LittleFS, serverIpPath, serverIp.c_str());
           }
-          // HTTP POST EMAIL PLT value
+          // HTTP POST TOKEN PLT value
           if (p->name() == PARAM_INPUT_4) {
-            emailPlt = p->value().c_str();
-            Serial.print("EMAIL PLT set to: ");
-            Serial.println(emailPlt);
+            token = p->value().c_str();
+            Serial.print("TOKEN PLT set to: ");
+            Serial.println(token);
             // Write file to save value
-            //writeFile(LittleFS, passPath, pass.c_str());
-          }
-          // HTTP POST PASSWORD PLT value
-          if (p->name() == PARAM_INPUT_5) {
-            passwordPlt = p->value().c_str();
-            Serial.print("PASSWORD PLT set to: ");
-            Serial.println(passwordPlt);
-            // Write file to save value
-            //writeFile(LittleFS, passPath, passwordPlt.c_str());
+            writeFile(LittleFS, tokenIpPath, token.c_str());
           }
         }
       }
@@ -334,17 +374,21 @@ void setup() {
         Serial.println("Botão 1 pressionado");
         Serial.println("Novas Credenciais SSID-" + ssid + " Pass- " + pass);
         // Outras operações para o Botão 1...
-      } else if (request->hasParam(PARAM_INPUT_3) && request->hasParam(PARAM_INPUT_4) && request->hasParam(PARAM_INPUT_5)) {
+      } else if (request->hasParam(PARAM_INPUT_3) && request->hasParam(PARAM_INPUT_4)) {
         // Lógica para o Botão 2...
         Serial.println("Botão 2 pressionado");
-        Serial.println("Novos dados ip server " + serverIp + " Email Plt- " + emailPlt + " Password Plt- " + passwordPlt);
+        Serial.println("Novos dados ip server " + serverIp + " Token Plt- " + token);
         // Outras operações para o Botão 2...
       }
 
       request->send(LittleFS, "/index.html", String(), false, processor);
     });
-    server.begin();
 
+    mqttclient.setServer(mqtt_server, mqtt_port);
+    mqttclient.setCallback(callback); // Set the callback function for incoming messages
+    mqttclient.subscribe(mqtt_topic); // Subscribe to the MQTT topic
+
+    server.begin();
 
   }
   else {
@@ -390,9 +434,29 @@ void setup() {
     });
     server.begin();
   }
+
+
 }
 
 void loop() {
+
+  /* if (!mqttclient.connected()) {
+     Serial.println("Lost connection to MQTT broker. Reconnecting...");
+     while (!client.connected()) {
+       if (mqttclient.connect("ESP8266Client")) {
+         Serial.println("Reconnected to MQTT broker");
+         mqttclient.subscribe(mqttTopic);
+       } else {
+         Serial.print("Failed, rc=");
+         Serial.print(mqttclient.state());
+         Serial.println(" Retrying in 5 seconds...");
+         delay(5000);
+       }
+     }
+    }*/
+
+
+
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillisSensor >= intervalSensor) {
     // save the last time you updated the DHT values
@@ -429,23 +493,74 @@ void loop() {
       l = newL;
       //Serial.println(l);
     }
-  
-  //-------------------------------------------------
-  HTTPClient http; 
+
+    unsigned long currentMillis = millis();
+
+    // MQTT handling
+    if (currentMillis - previousMillisMqtt >= mqttInterval) {
+      previousMillisMqtt = currentMillis;
+      if (!mqttclient.connected()) {
+        reconnect();
+      }
+      mqttclient.loop();
+      // Your MQTT-related code here
+    }
+
+    if (currentMillis - previousMillisHttp >= httpInterval) {
+      previousMillisHttp = currentMillis;
+      // Non-blocking HTTP requests using HTTPClient
+      makeHTTPRequest(newT);
+
+    }
+
+
+
+  }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  // Handle incoming messages here
+  Serial.print("Message: ");
+  Serial.write(payload, length);
+  Serial.println();
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!mqttclient.connected()) {
+    Serial.println("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (mqttclient.connect(clientId.c_str())) {
+      Serial.println("Connected to MQTT broker");
+      mqttclient.subscribe("1");
+    } else {
+      Serial.print("Failed, rc=");
+      Serial.print(mqttclient.state());
+      Serial.println(" Try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void makeHTTPRequest(float newT) {
+  HTTPClient http;
   //prepare request
   String postData;
-  int idsensor=1;
-  String medida= "C";
-  
-  postData = "id_sensor=" + String(idsensor) + "&valor=" + String(newT) + "&unidade_medida=" + String(medida); 
+  int idsensor = 1;
+  String medida = "C";
+
+  http.setTimeout(10000);
+  postData = "id_sensor=" + String(idsensor) + "&valor=" + String(newT) + "&unidade_medida=" + String(medida);
   http.begin(client, host);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpCode = http.POST(postData);
-  String payload = http.getString();
- 
-  Serial.println(httpCode);
-  Serial.println(payload);
-  http.end();
+  String payload2 = http.getString();
 
-}
+  Serial.println(httpCode);
+  Serial.println(payload2);
+  http.end();
 }

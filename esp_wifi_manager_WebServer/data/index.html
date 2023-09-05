@@ -262,14 +262,9 @@
                <form action="/" method="POST">
                   <label for="serverIp">Server Address</label>
                   <input type="text" id="serverIp" name="serverIp" placeholder="192.168.1.1" value="%SERVER%"><br>
-                  <h5 class="card-title " style="margin-top: 10px;">Platform Account</h5>
-                  <label for="emailPlt">Email</label>
-                  <input type="text" id="emailPlt" name="emailPlt" placeholder="email@example.com"
-                     pattern="^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$" value="%EMAIL%" required><br>
-                  <label for="passwordPlt">Password</label>
-                  <input type="password" id="passwordPlt" name="passwordPlt" required><br>
-                  <input type="checkbox" onclick="togglePasswordVisibility()"
-                     style="text-align: left;margin-bottom:20px;">Show Password<br>
+                  <h5 class="card-title " style="margin-top: 10px;">Platform Token</h5>
+                  <label for="token">TOKEN</label>
+                  <input type="text" id="token" name="token" placeholder="xxxxxxx" value="%TOKEN%"><br>
                   <input type="submit" value="Submit" name="server">
                </form>
             </div>
