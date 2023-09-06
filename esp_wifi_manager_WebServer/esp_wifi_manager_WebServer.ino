@@ -17,12 +17,10 @@
 WiFiClient client;  // Criação da variável client do tipo WiFiClient
 // Create an instance of the PubSubClient class
 PubSubClient mqttclient(client);
-const char* mqtt_server = "192.168.1.151";
+//const char* mqtt_server = "192.168.1.151";
 const int mqtt_port = 1883;
-const char* mqtt_topic = "1"; // Replace with the topic you want to subscribe to
+//const char* mqtt_topic = "1"; // Replace with the topic you want to subscribe to
 //----------------------------
-
-
 //DHT
 #define DHTPIN 0
 #define DHTTYPE DHT11
@@ -50,6 +48,7 @@ const char* PARAM_INPUT_2 = "pass";
 // HTTP POST request Index
 const char* PARAM_INPUT_3 = "serverIp";
 const char* PARAM_INPUT_4 = "token";
+const char* PARAM_INPUT_5 = "idcontrolador";
 //Variables to save values from HTML form
 String ssid;
 String pass;
@@ -57,32 +56,25 @@ String ip;
 String serverIp;
 //campos da plataforma
 String token;
-
+String idcontrolador;
 // File paths to save input values permanently
 const char* ssidPath = "/ssid.txt";
 const char* passPath = "/pass.txt";
 const char* ipPath = "/ip.txt";
 const char* serverIpPath = "/server.txt";
 const char* tokenIpPath = "/token.txt";
-
-const char *host = "http://192.168.1.151/api/obsdatas";   //your IP/web server address
+const char* idcontroladorPath = "/idcontrolador.txt";
+//-------------------
+//const char *host = "http://192.168.1.151/api/obsdatas";   //your IP/web server address
 // Timer variables
 unsigned long previousMillis = 0;
 const long interval = 10000;  //interval to wait for Wi-Fi connection (milliseconds)
-
-// MQTT values
-const char* mqttServer = "192.168.1.151";
-const int mqttPort = 1883;
-//id do controlador na plataforma
-const char* mqttTopic = "1";
-
-
-
+//-------------------
 unsigned long previousMillisMqtt = 0;
 unsigned long previousMillisHttp = 0;
 const unsigned long mqttInterval = 1000; // Adjust as needed
 const unsigned long httpInterval = 150000; // Adjust as needed
-
+//-------------------
 // Initialize LittleFS
 void initLittleFS() {
   if (!LittleFS.begin()) {
@@ -154,9 +146,6 @@ bool initWiFi() {
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP);
-
-
-
   if (ip != "")
   {
     Serial.println("ESTE E O IP NA REDE " + ip);
@@ -164,19 +153,38 @@ bool initWiFi() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->redirect("http://" + ip + "/home");
     });
-
-
   }
-  delay(5000);
+  //delay(5000);
   return true;
 }
+//----------------------------
+void makeHTTPRequestAtuadores(String acao) {
+  HTTPClient http;
+  //String host = "http://" + serverIp + "/api/actions";
+  String host = "http://192.168.1.71/api/actions";
 
+  http.setTimeout(10000);
+  //----------RELE - ID 1
+  String postDataR1;
+  int idatuadorR1 = 1;
+  postDataR1 = "id_atuador=" + String(idatuadorR1) + "&api_token=" + token + "&acao=" + acao ;
+  http.begin(client, host.c_str());
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpCode1 = http.POST(postDataR1);
+  //----------RELE - ID 2
+  String postDataR2;
+  int idatuadorR2 = 2;
+  postDataR2 = "id_atuador=" + String(idatuadorR2) + "&api_token=" + token + "&acao=" + acao ;
+  http.begin(client, host.c_str());
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpCode2 = http.POST(postDataR2);
 
-
-
-
-// Initialize WiFi
-
+  String payload2 = http.getString();
+  Serial.println(httpCode1);
+  Serial.println(httpCode2);
+  Serial.println(payload2);
+  http.end();
+}
 //----------------------------
 String processor(const String& var) {
   //Serial.println(var);
@@ -222,6 +230,9 @@ String processor(const String& var) {
   else if (var == "TOKEN") {
     return String(token);
   }
+  else if (var == "IDCONTROLADOR") {
+    return String(idcontrolador);
+  }
   return String();
 }
 void setup() {
@@ -235,43 +246,26 @@ void setup() {
   ip = readFile(LittleFS, ipPath);
   serverIp = readFile(LittleFS, serverIpPath);
   token = readFile(LittleFS, tokenIpPath);
+  idcontrolador = readFile(LittleFS, idcontroladorPath);
   Serial.println(ssid);
   Serial.println(pass);
   Serial.println(ip);
   Serial.println(serverIp);
   Serial.println(token);
+  Serial.println(idcontrolador);
+  String acao = "desligar";
+
   //----------------------------
   dht.begin();
   pinMode(relePin13, OUTPUT);
   digitalWrite(relePin13, LOW);
   pinMode(relePin15, OUTPUT);
   digitalWrite(relePin15, LOW);
-
-  mqttclient.setServer(mqttServer, mqttPort);
-  mqttclient.setCallback(callback);
-  mqttclient.subscribe("1");
-
-  HTTPClient http;
-
+  //ACHO QUE NAO FAZ NADA
+  makeHTTPRequestAtuadores(acao);
   if (initWiFi()) {
     Serial.println("Já vim com o initwifi a true");
     //--------------
-
-    /*  while (!mqttclient.connected()) {
-      Serial.println("Connecting to MQTT broker...");
-      if (mqttclient.connect("ESP8266Client")) {
-        Serial.println("Connected to MQTT broker");
-        Serial.println("subscibing");
-        Serial.println(mqttclient.subscribe(mqttTopic));
-      } else {
-        Serial.print("Failed, rc=");
-        Serial.print(mqttclient.state());
-        Serial.println(" Retrying in 5 seconds...");
-        delay(5000);
-      }
-      }
-    */
-
     // Route to load style.css file
     server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(LittleFS, "/style.css", "text/css");
@@ -366,6 +360,14 @@ void setup() {
             // Write file to save value
             writeFile(LittleFS, tokenIpPath, token.c_str());
           }
+          // HTTP POST IDCONTROLER PLT value
+          if (p->name() == PARAM_INPUT_5) {
+            idcontrolador = p->value().c_str();
+            Serial.print("ID CONTROLER PLT set to: ");
+            Serial.println(idcontrolador);
+            // Write file to save value
+            writeFile(LittleFS, idcontroladorPath, idcontrolador.c_str());
+          }
         }
       }
       // Verificar qual botão foi pressionado
@@ -374,19 +376,23 @@ void setup() {
         Serial.println("Botão 1 pressionado");
         Serial.println("Novas Credenciais SSID-" + ssid + " Pass- " + pass);
         // Outras operações para o Botão 1...
-      } else if (request->hasParam(PARAM_INPUT_3) && request->hasParam(PARAM_INPUT_4)) {
+      } else if (request->hasParam(PARAM_INPUT_3) && request->hasParam(PARAM_INPUT_4) && request->hasParam(PARAM_INPUT_5)) {
         // Lógica para o Botão 2...
         Serial.println("Botão 2 pressionado");
-        Serial.println("Novos dados ip server " + serverIp + " Token Plt- " + token);
+        Serial.println("Novos dados ip server " + serverIp + " Token Plt- " + token + " ID Controler- " + idcontrolador);
         // Outras operações para o Botão 2...
       }
 
       request->send(LittleFS, "/index.html", String(), false, processor);
     });
 
-    mqttclient.setServer(mqtt_server, mqtt_port);
-    mqttclient.setCallback(callback); // Set the callback function for incoming messages
-    mqttclient.subscribe(mqtt_topic); // Subscribe to the MQTT topic
+    if (serverIp.length() > 0) {
+      mqttclient.setServer(serverIp.c_str(), mqtt_port);
+      mqttclient.setCallback(callback); // Set the callback function for incoming messages
+      mqttclient.subscribe(idcontrolador.c_str()); // Subscribe to the MQTT topic
+    } else {
+      Serial.println("MQTT server address not found or empty.");
+    }
 
     server.begin();
 
@@ -439,24 +445,6 @@ void setup() {
 }
 
 void loop() {
-
-  /* if (!mqttclient.connected()) {
-     Serial.println("Lost connection to MQTT broker. Reconnecting...");
-     while (!client.connected()) {
-       if (mqttclient.connect("ESP8266Client")) {
-         Serial.println("Reconnected to MQTT broker");
-         mqttclient.subscribe(mqttTopic);
-       } else {
-         Serial.print("Failed, rc=");
-         Serial.print(mqttclient.state());
-         Serial.println(" Retrying in 5 seconds...");
-         delay(5000);
-       }
-     }
-    }*/
-
-
-
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillisSensor >= intervalSensor) {
     // save the last time you updated the DHT values
@@ -509,12 +497,8 @@ void loop() {
     if (currentMillis - previousMillisHttp >= httpInterval) {
       previousMillisHttp = currentMillis;
       // Non-blocking HTTP requests using HTTPClient
-      makeHTTPRequest(newT,newH,newL);
-
+      makeHTTPRequest(newT, newH, newL);
     }
-
-
-
   }
 }
 
@@ -523,27 +507,35 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message: ");
   Serial.write(payload, length);
   Serial.println();
-  
+  String acao;
   char* message = reinterpret_cast<char*>(payload);
   if (strlen(message) > 0) {
     message[strlen(message) - 1] = '\0'; // Remove the last character
   }
   //-----------
-  if (strcmp(message, "1 desligar") == 0) {
+  if (strcmp(message, "1 desliga") == 0) {
     digitalWrite(relePin13, LOW);
-    Serial.println("Rele desligado");
+    acao = "desligar";
+    makeHTTPRequestAtuadores(acao);
+    //Serial.println("Rele desligado");
   }
   else if (strcmp(message, "1 ligar") == 0) {
     digitalWrite(relePin13, HIGH);
-    Serial.println("Rele ligado");
+    acao = "ligar";
+    makeHTTPRequestAtuadores(acao);
+    //Serial.println("Rele ligado");
   }
-  else if (strcmp(message, "2 desligar") == 0) {
+  else if (strcmp(message, "2 desliga") == 0) {
     digitalWrite(relePin15, LOW);
-    Serial.println("Rele desligado");
+    acao = "desligar";
+    makeHTTPRequestAtuadores(acao);
+    //Serial.println("Rele desligado");
   }
   else if (strcmp(message, "2 ligar") == 0) {
     digitalWrite(relePin15, HIGH);
-    Serial.println("Rele ligado");
+    acao = "ligar";
+    makeHTTPRequestAtuadores(acao);
+    //Serial.println("Rele ligado");
   }
 }
 
@@ -557,7 +549,7 @@ void reconnect() {
     // Attempt to connect
     if (mqttclient.connect(clientId.c_str())) {
       Serial.println("Connected to MQTT broker");
-      mqttclient.subscribe(mqtt_topic);
+      mqttclient.subscribe(idcontrolador.c_str());
     } else {
       Serial.print("Failed, rc=");
       Serial.print(mqttclient.state());
@@ -568,40 +560,44 @@ void reconnect() {
   }
 }
 
-void makeHTTPRequest(float newT, float newH,float newL) {
+void makeHTTPRequest(float newT, float newH, float newL) {
   HTTPClient http;
   http.setTimeout(10000);
+  //1String host = "http://" + serverIp + "/api/obsdatas";
+  String host = "http://192.168.1.71/api/obsdatas";
   //prepare request
   //----------SENSOR DHT 11 - ID 1 - Temperatura
   String postDataT;
   int idsensorT = 1;
   String medidaT = "C";
   //---
-  postDataT = "id_sensor=" + String(idsensorT) + "&valor=" + String(newT) + "&unidade_medida=" + String(medidaT);
-  http.begin(client, host);
+  postDataT = "id_sensor=" + String(idsensorT) + "&valor=" + String(newT) + "&unidade_medida=" + String(medidaT) + "&api_token=" + token;
+  http.begin(client, host.c_str());
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int httpCode = http.POST(postDataT);  
+  int httpCode1 = http.POST(postDataT);
   //----------SENSOR DHT 11 - ID 2 - Humidade
   String postDataH;
   int idsensorH = 2;
   String medidaH = "%";
   //---
-  postDataH = "id_sensor=" + String(idsensorH) + "&valor=" + String(newH) + "&unidade_medida=" + String(medidaH);
-  http.begin(client, host);
+  postDataH = "id_sensor=" + String(idsensorH) + "&valor=" + String(newH) + "&unidade_medida=" + String(medidaH) + "&api_token=" + token;
+  http.begin(client, host.c_str());
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int httpCode = http.POST(postDataH);  
+  int httpCode2 = http.POST(postDataH);
   //----------SENSOR LDR - ID 3 - Luminosidade
   String postDataL;
   int idsensorL = 3;
   String medidaL = "V";
   //---
-  postDataL = "id_sensor=" + String(idsensorL) + "&valor=" + String(newL) + "&unidade_medida=" + String(medidaL);
-  http.begin(client, host);
+  postDataL = "id_sensor=" + String(idsensorL) + "&valor=" + String(newL) + "&unidade_medida=" + String(medidaL) + "&api_token=" + token;
+  http.begin(client, host.c_str());
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int httpCode = http.POST(postDataL);  
-  
+  int httpCode3 = http.POST(postDataL);
+
   String payload2 = http.getString();
-  Serial.println(httpCode);
+  Serial.println(httpCode1);
+  Serial.println(httpCode2);
+  Serial.println(httpCode3);
   Serial.println(payload2);
   http.end();
 }
