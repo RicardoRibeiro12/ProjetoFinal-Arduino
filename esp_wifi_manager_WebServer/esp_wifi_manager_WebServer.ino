@@ -160,8 +160,8 @@ bool initWiFi() {
 //----------------------------
 void makeHTTPRequestAtuadores(String acao) {
   HTTPClient http;
-  //String host = "http://" + serverIp + "/api/actions";
-  String host = "http://192.168.1.71/api/actions";
+  String host = "http://" + serverIp + "/api/actions";
+  //String host = "http://192.168.1.71/api/actions";
 
   http.setTimeout(10000);
   //----------RELE - ID 1
@@ -525,7 +525,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     makeHTTPRequestAtuadores(acao);
     //Serial.println("Rele ligado");
   }
-  else if (strcmp(message, "2 desliga") == 0) {
+  if (strcmp(message, "2 desliga") == 0) {
     digitalWrite(relePin15, LOW);
     acao = "desligar";
     makeHTTPRequestAtuadores(acao);
@@ -563,8 +563,8 @@ void reconnect() {
 void makeHTTPRequest(float newT, float newH, float newL) {
   HTTPClient http;
   http.setTimeout(10000);
-  //1String host = "http://" + serverIp + "/api/obsdatas";
-  String host = "http://192.168.1.71/api/obsdatas";
+  String host = "http://" + serverIp + "/api/obsdatas";
+  //String host = "http://192.168.1.71/api/obsdatas";
   //prepare request
   //----------SENSOR DHT 11 - ID 1 - Temperatura
   String postDataT;
