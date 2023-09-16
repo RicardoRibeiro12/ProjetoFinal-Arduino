@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+   <meta charset='UTF-8'>
+   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+   <link rel="stylesheet" type="text/css" href="/principal.css">
+   <title>ESP8266 Sensor Data</title>
+   </head>
+<script>
+   setInterval(function () {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+         if (this.readyState == 4 && this.status == 200) {
+            const responseText = this.responseText.trim();
+            const boiaElement = document.getElementById("boia")
+            if (responseText === "1.00") {
+               boiaElement.textContent = "Cheio";
+            } else if (responseText === "0.00") {
+               boiaElement.textContent = "Não Cheio";
+            }
+         }
+      };
+      xhttp.open("GET", "/boia", true);
+      xhttp.send();
+   }, 2000);
+
+</script>
+
+<body>
+   <div class="topnav">
+      <img src="/logo.png" alt="logo" class="logo" width="50px" height="50px">
+      <h1 id="ip">ESP Wi-Fi Manager - %IP%</h1>
+   </div>
+   <div class="row">
+      <div class="col-md-3 col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">RELE 1</h5><!--- GPIO 13-->
+               <p>
+                  <a href="/13/on"><button class="button-on">ON</button></a>
+                  <a href="/13/off"><button class="button-off">OFF</button></a>
+               </p>
+               <p class="card-subtitle mb-2 text-muted">State: %STATE13%</p>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div class="row">
+      <div class="col-lg-3">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">Deposito</h5>
+               <h6 class="card-subtitle mb-2 text-muted">
+                  <span id="boia">%BOIA%</span>
+               </h6>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div class="row">
+      <div class="col-lg col-md col-sm">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">Server Configuration</h5>
+               <form action="/" method="POST">
+                  <label for="serverIp">Server Address</label>
+                  <input type="text" id="serverIp" name="serverIp" placeholder="192.168.1.1" value="%SERVER%"><br>
+                  <label for="token">Platform Token</label>
+                  <input type="text" id="token" name="token" placeholder="Your Token" value="%TOKEN%"><br>
+                  <label for="token">Controller Id</label>
+                  <input type="text" id="idcontrolador" name="idcontrolador" placeholder="Number" value="%IDCONTROLADOR%"><br>
+                  <input type="submit" value="Submit" name="server">
+               </form>
+            </div>
+         </div>
+      </div>
+      <div class="col-lg col-md col-sm">
+         <div class="card mb-3">
+            <div class="card-body">
+               <h5 class="card-title">Wi-Fi Configuration</h5>
+               <form action="/" method="POST">
+                  <label for="ssid">SSID</label>
+                  <input type="text" id="ssid" name="ssid" value="%SSID%"><br>
+                  <label for="pass">Password</label>
+                  <input type="password" id="pass" name="pass" value=%PASS%><br>
+                  <input type="checkbox" onclick="togglePasswordVisibility2()"
+                     style="text-align: left;margin-bottom:20px;">Show Password<br>
+                  <input type="submit" value="Submit" name="Net">
+               </form>
+               <h5 class="card-title" style="margin-bottom: 15px;">Access point Point</h5>
+                  <a href="/desligar" ><button class="buttonAp">OFF</button></a>
+            </div>
+         </div>
+      </div>
+   </div>
+</body>
+
+</html>
+<script>
+   function togglePasswordVisibility() {
+      var passwordInput = document.getElementById("passwordPlt");
+      if (passwordInput.type === "password") {
+         passwordInput.type = "text";
+      } else {
+         passwordInput.type = "password";
+      }
+   }
+   function togglePasswordVisibility2() {
+      var passwordInput = document.getElementById("pass");
+      if (passwordInput.type === "password") {
+         passwordInput.type = "text";
+      } else {
+         passwordInput.type = "password";
+      }
+   }
+</script>

@@ -1,0 +1,152 @@
+/* Estilos para telas grandes */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+/* Estilos para telas médias */
+@media (max-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+/* Estilos para telas pequenas */
+@media (max-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+
+/* Estilos para dispositivos móveis */
+@media (max-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+
+html {
+  font-family: Arial, Helvetica, sans-serif; 
+  display: inline-block; 
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.8rem; 
+  color: white;
+}
+
+p { 
+  font-size: 1.4rem;
+  text-align: center;
+  margin-left: 5%;
+}
+
+.topnav { 
+  overflow: hidden; 
+  background-color: #528364;
+  display: flex;
+  align-items: center;
+  justify-content: center; 
+}
+.topnav h1 {
+  text-align: center; /* Adiciona centralização horizontal */
+}
+.logo {
+  margin-right: 10px;
+}
+body {  
+  margin: 0;
+}
+
+.content { 
+  padding: 5%;
+}
+
+.card-grid { 
+  max-width: 800px; 
+  margin: 0 auto; 
+  display: grid; 
+  grid-gap: 2rem; 
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.card { 
+  background-color: white; 
+  box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
+}
+
+.card-title { 
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #528364
+}
+
+input[type=submit] {
+  border: none;
+  color: #FEFCFB;
+  background-color: #528364;
+  padding: 15px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  width: 100px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  transition-duration: 0.4s;
+  }
+
+input[type=submit]:hover {
+  background-color: #A8C1B1;
+  
+}
+
+input[type=text], input[type=number], input[type=password], select {
+  width: 68%;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  margin-bottom: 18px;
+}
+
+label {
+  font-size: 1.2rem; 
+  display: inline-block;
+  width: 30%;
+  text-align: center;
+  margin-right: 2%;
+}
+.value{
+  font-size: 1.2rem;
+  color: #A8C1B1;  
+}
+.state {
+  font-size: 1.2rem;
+  color: #A8C1B1;
+}
+button {
+  border: none;
+  color: #FEFCFB;
+  padding: 15px 32px;
+  text-align: center;
+  font-size: 16px;
+  width: 100px;
+  border-radius: 4px;
+  transition-duration: 0.4s;
+}
+.button-on {
+  background-color: #528364;
+}
+.button-on:hover {
+  background-color: #A8C1B1;
+}
+.button-off {
+  background-color: #858585;
+}
+.button-off:hover {
+  background-color: #A8C1B1;
+} 

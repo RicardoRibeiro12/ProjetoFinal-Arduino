@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ESP Wi-Fi Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div class="topnav">
+    <img src="logo.png" alt="logo" class="logo" width="50px" height="50px">
+    <h1>ESP Wi-Fi Manager</h1>
+  </div>
+  <div class="content">
+    <div class="card-grid">
+      <div class="card">
+        <h1 class="card-title">Wi-Fi Settings</h1>
+        <form action="/" method="POST">
+          <label for="ssid">SSID</label>
+          <input type="text" id="ssid" name="ssid"><br>
+          <label for="pass">Password</label>
+          <input type="password" id="pass" name="pass"><br>
+          <input type="checkbox" onclick="togglePasswordVisibility()" style="text-align: left;margin-bottom:20px;">Show
+          Password<br>
+          <input type="submit" value="Submit" id="meuBotao">
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  function togglePasswordVisibility() {
+    var passwordInput = document.getElementById("pass");
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+    } else {
+      passwordInput.type = "password";
+    }
+  }
+  // Obtém uma referência para o botão pelo seu ID
+  const botao = document.getElementById('meuBotao');
+
+  // Adiciona um evento de clique ao botão
+  botao.addEventListener('click', function () {
+    // Exibe uma caixa de alerta do navegador
+    alert('Por favor! Ligue-se novamente ao ESP-AP para obter o ip obtido pelo seu ESP');
+  });
+</script>
+
+</html>
